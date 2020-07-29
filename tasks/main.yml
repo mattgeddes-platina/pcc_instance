@@ -43,6 +43,12 @@
         state: directory
         path: "/home/{{ pcc_user }}/.ssh"
         mode: 0700
+    - name: Temporary directory to help Ansible out
+      file:
+        state: directory
+        mode: 0700
+        path: "/home/{{ pcc_user }}/.ansible/tmp"
+        owner: "{{ pcc_user }}"
     - name: OpenSSH public/private keypair
       openssh_keypair:
         path: "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}"
