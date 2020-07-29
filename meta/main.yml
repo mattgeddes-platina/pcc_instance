@@ -1,0 +1,19 @@
+---
+galaxy_info:
+  author: Matthew Geddes
+  description: Ansible role to deploy an instance of Platina Command Center
+  company: Platina Systems
+  license: GPL-2.0-only
+  min_ansible_version: 2.7
+  platforms:
+    - name: Ubuntu
+      versions:
+          - all
+    - name: Debian
+      versions:
+          - all
+    - name: EL
+      versions:
+          - all
+  galaxy_tags: ["platina","pcc","commandcenter"]
+dependencies: []
