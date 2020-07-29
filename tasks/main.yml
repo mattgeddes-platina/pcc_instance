@@ -12,7 +12,7 @@
         name: "{{ pcc_user }}"
         shell: "/bin/bash"
         home: "/home/{{ pcc_username }}"
-        password: "{{ pcc_password | password_hash('sha512', password_salt) }}"
+        password: "{{ pcc_password | password_hash('sha512') }}"
     - name: Grant passwordless sudo access
       copy:
         dest: "/etc/sudoers.d/{{ pcc_user }}"
