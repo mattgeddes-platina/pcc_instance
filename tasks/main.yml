@@ -3,154 +3,154 @@
 - block:
     - name: Prerequisite packages
       package:
-          state: present
-          name:
-              - sudo
-              - openssh-server
+        state: present
+        name:
+          - sudo
+          - openssh-server
     - name: PCC deploy user account
       user:
-          name: "{{ pcc_user }}"
-          shell: "/bin/bash"
-          home: "/home/{{ pcc_username }}"
-          password: "{{ pcc_password | password_hash('sha512', password_salt) }}"
+        name: "{{ pcc_user }}"
+        shell: "/bin/bash"
+        home: "/home/{{ pcc_username }}"
+        password: "{{ pcc_password | password_hash('sha512', password_salt) }}"
     - name: Grant passwordless sudo access
       copy:
-          dest: "/etc/sudoers.d/{{ pcc_user }}"
-          content: "{{ pcc user }} ALL=(ALL:ALL) NOPASSWD: ALL"
-          owner: root
-          mode: 0600
+        dest: "/etc/sudoers.d/{{ pcc_user }}"
+        content: "{{ pcc user }} ALL=(ALL:ALL) NOPASSWD: ALL"
+        owner: root
+        mode: 0600
     - name: Trusted third-party CA certificates
       file:
-          state: directory
-          mode: 0755
-          path: "/usr/local/share/ca-certificates/{{ ca_name }}"
+        state: directory
+        mode: 0755
+        path: "/usr/local/share/ca-certificates/{{ ca_name }}"
     - name: Copy trusted third-party CA certificates
       copy:
-          src: "{{ item }}"
-          dest: "/usr/local/share/ca-certificates/{{ ca_name }}/"
-          mode: 0644
+        src: "{{ item }}"
+        dest: "/usr/local/share/ca-certificates/{{ ca_name }}/"
+        mode: 0644
       register: cacert
       with_items:
-          - "{{ ca_certs }}"
+        - "{{ ca_certs }}"
     - name: Trust third-party CA certificates
       command: update-ca-certificates
       when: cacert.changed
-  become: yes
+  become: true
 # Block run as {{ pcc_user }}
 - block:
     - name: OpenSSH directory
       file:
-          state: directory
-          path: "/home/{{ pcc_user }}/.ssh"
-          mode: 0700
+        state: directory
+        path: "/home/{{ pcc_user }}/.ssh"
+        mode: 0700
     - name: OpenSSH public/private keypair
       openssh_keypair:
-          path: "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}"
-          type: "{{ ssh_keytype }}"
-          state: present
+        path: "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}"
+        type: "{{ ssh_keytype }}"
+        state: present
     - name: Read public key
       command: "cat /home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}.pub"
       register: pubkey
     - name: PCC ssh self-trust
       authorized_key:
-          user: "{{ pcc_user }}"
-          state: present
-          key: "{{ pubkey.stdout }}"
+        user: "{{ pcc_user }}"
+        state: present
+        key: "{{ pubkey.stdout }}"
     - name: PCC admins trusted keys
       authorized_key:
-          user: "{{ pcc_user }}"
-          state: present
-          key: "{{ item }}"
+        user: "{{ pcc_user }}"
+        state: present
+        key: "{{ item }}"
       with_items: "{{ admin_keys }}"
     - name: Temporary directory
       file:
-          state: directory
-          path: "{{ tmp_dir }}"
-          mode: 0700
+        state: directory
+        path: "{{ tmp_dir }}"
+        mode: 0700
     - name: PCC TLS private key
       copy:
-          src: "{{ pcc_tls_private_key }}"
-          dest: "{{ tmp_dir }}/pcc-key.pem"
+        src: "{{ pcc_tls_private_key }}"
+        dest: "{{ tmp_dir }}/pcc-key.pem"
     - name: PCC TLS signed certificate
       copy:
-          src: "{{ pcc_tls_public_key }}"
-          dest: "{{ tmp_dir }}/pcc-cert.pem"
+        src: "{{ pcc_tls_public_key }}"
+        dest: "{{ tmp_dir }}/pcc-cert.pem"
     - name: Retrieve PCC installer
       get_url:
-          url: "{{ installer_url }}"
-          dest: "{{ tmp_dir }}/installer.tgz"
-          mode: 0600
+        url: "{{ installer_url }}"
+        dest: "{{ tmp_dir }}/installer.tgz"
+        mode: 0600
       register: installer
     - name: Unpack PCC installer
       unarchive:
-          src: "{{ tmp_dir }}/installer.tgz"
-          dest: "{{ tmp_dir }}"
-          remote_src: True
+        src: "{{ tmp_dir }}/installer.tgz"
+        dest: "{{ tmp_dir }}"
+        remote_src: true
       register: unpacked
     - name: PCC installer version
       command:
-          argv:
-              - "./platina-cli"
-              - "--version"
-          chdir: "{{ tmp_dir }}/platina-cli-ws"
+        argv:
+          - "./platina-cli"
+          - "--version"
+        chdir: "{{ tmp_dir }}/platina-cli-ws"
       register: installer_version
-     - name: PCC installation
-       command:
-           argv:
-               - "./platina-cli"
-               - "install"
-               - "--username"
-               - "{{ platina_user }}"
-               - "--password"
-               - "{{ platina_password }}"
-               - "--product"
-               - "PCC"
-               - "--release"
-               - "{{ pcc_version }}"
-               - "--url"
-               - "https://{{ pcc_repo }}"
-               - "--registryUrl"
-               - "https://{{ pcc_repo }}:5000"
-               - "--registryUsername"
-               - "{{ platina_user }}"
-               - "--registryPassword"
-               - "{{ platina_password }}"
-               - "--sslPrivateKey"
-               - "../pcc-key.pem"
-               - "--sslCertificate"
-               - "../pcc-cert.pem"
-               - "--privateKey"
-               - "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}"
-               - "--publicKey"
-               - "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}.pub"
-               - "--configRepo"
-               - "{{ config_version }}"
-               - "--pruneVolumes"
-            chdir: "{{ tmp_dir }}/platina-cli-ws"
-        register: install_command
-      - name: PCC configuration
-        command:
-            argv:
-                - "./platina-cli"
-                - "config"
-                - "--password"
-                - "{{ platina_password }}"
-            chdir: "{{ tmp_dir }}/platina-cli-ws"
-      - name: Start PCC
-        command:
-            argv:
-                - "./platina-cli"
-                - "start"
-                - "--password"
-                - "{{ platina_password }}"
-            chdir: "{{ tmp_dir }}/platina-cli-ws"
-      - name: Wait for PCC UI availability
-        wait_for:
-            port: 9999
-            state: started
-            timeout: 600
-            msg: PCC UI not started within timeout period
-  become: yes
+    - name: PCC installation
+      command:
+        argv:
+          - "./platina-cli"
+          - "install"
+          - "--username"
+          - "{{ platina_user }}"
+          - "--password"
+          - "{{ platina_password }}"
+          - "--product"
+          - "PCC"
+          - "--release"
+          - "{{ pcc_version }}"
+          - "--url"
+          - "https://{{ pcc_repo }}"
+          - "--registryUrl"
+          - "https://{{ pcc_repo }}:5000"
+          - "--registryUsername"
+          - "{{ platina_user }}"
+          - "--registryPassword"
+          - "{{ platina_password }}"
+          - "--sslPrivateKey"
+          - "../pcc-key.pem"
+          - "--sslCertificate"
+          - "../pcc-cert.pem"
+          - "--privateKey"
+          - "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}"
+          - "--publicKey"
+          - "/home/{{ pcc_user }}/.ssh/id_{{ ssh_keytype }}.pub"
+          - "--configRepo"
+          - "{{ config_version }}"
+          - "--pruneVolumes"
+        chdir: "{{ tmp_dir }}/platina-cli-ws"
+      register: install_command
+    - name: PCC configuration
+      command:
+        argv:
+          - "./platina-cli"
+          - "config"
+          - "--password"
+          - "{{ platina_password }}"
+        chdir: "{{ tmp_dir }}/platina-cli-ws"
+    - name: Start PCC
+      command:
+        argv:
+          - "./platina-cli"
+          - "start"
+          - "--password"
+          - "{{ platina_password }}"
+        chdir: "{{ tmp_dir }}/platina-cli-ws"
+    - name: Wait for PCC UI availability
+      wait_for:
+        port: 9999
+        state: started
+        timeout: 600
+        msg: PCC UI not started within timeout period
+  become: true
   become_user: "{{ pcc_user }}"
 # Summary information at the end
 - block:
@@ -160,4 +160,4 @@
       debug: var=installer_version
     - name: PCC OpenSSH public key
       debug: var=pubkey
-  become: no
+  become: false

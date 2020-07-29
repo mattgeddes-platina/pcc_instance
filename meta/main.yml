@@ -15,5 +15,5 @@ galaxy_info:
     - name: EL
       versions:
           - all
-  galaxy_tags: ["platina","pcc","commandcenter"]
+  galaxy_tags: ["platina", "pcc", "commandcenter"]
 dependencies: []
