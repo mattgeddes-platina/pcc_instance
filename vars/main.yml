@@ -3,7 +3,7 @@
 # username to deploy PCC as
 pcc_username: "pcc"
 # password for the above account. XXX: Change me!
-#pcc_password: "pcc"
+# pcc_password: "pcc"
 # OpenSSH keytype. Shouldn't need to be changed.
 ssh_keytype: "ecdsa"
 # list of OpenSSH public keys to also have the {{ pcc_username }} user trust.
@@ -15,14 +15,14 @@ ca_certs: []
 # Temporary directory for downloading and executing the installer within.
 tmp_dir: "/home/{{ pcc_user }}/tmp"
 # TLS private key file
-#pcc_tls_private_key: "files/pcc.company.com.key"
+# pcc_tls_private_key: "files/pcc.company.com.key"
 # TLS certificate
-#pcc_tls_public_key: "files/pcc.company.com.pem"
+# pcc_tls_public_key: "files/pcc.company.com.pem"
 # Platina customer credentials (for platina.io etc)
-#platina_user=""
-#platina_password=""
+# platina_user=""
+# platina_password=""
 # PCC version to deploy
-pcc_version="v1.4.3"
-config_version="{{ pcc_version }}"
+pcc_version: "v1.4.3"
+config_version: "{{ pcc_version }}"
 # Repository to pull from. Usually platina.io for production.
-pcc_repo="platina.io"
+pcc_repo: "platina.io"
