@@ -26,3 +26,5 @@ pcc_version: "v1.4.3"
 config_version: "{{ pcc_version }}"
 # Repository to pull from. Usually platina.io for production.
 pcc_repo: "platina.io"
+# Current location of platina-cli binary tarball
+installer_url: https://platinadownload.auctacognitio.com/files/platina-cli/platina-cli.tar.gz
