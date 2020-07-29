@@ -16,7 +16,7 @@
     - name: Grant passwordless sudo access
       copy:
         dest: "/etc/sudoers.d/{{ pcc_user }}"
-        content: "{{ pcc user }} ALL=(ALL:ALL) NOPASSWD: ALL"
+        content: "{{ pcc_user }} ALL=(ALL:ALL) NOPASSWD: ALL"
         owner: root
         mode: 0600
     - name: Trusted third-party CA certificates
